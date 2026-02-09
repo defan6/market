@@ -1,0 +1,50 @@
+package main
+
+import (
+	"fmt"
+	"log/slog"
+	"os"
+	"sso/internal/config"
+	"sso/internal/lib/logger/handlers/slogpretty"
+)
+
+const (
+	envLocal = "local"
+	envDev   = "dev"
+	envProd  = "prod"
+)
+
+// TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
+// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
+func main() {
+
+	cfg := config.MustLoad()
+	fmt.Println(cfg)
+
+	log := setupLogger(cfg.Env)
+
+	log.Info("starting app", slog.String("env", cfg.Env))
+}
+
+func setupLogger(env string) *slog.Logger {
+	var log *slog.Logger
+	switch env {
+	case envLocal:
+		log = setupPrettySlog()
+	case envDev:
+		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	case envProd:
+		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	}
+
+	return log
+}
+
+func setupPrettySlog() *slog.Logger {
+	opts := slogpretty.PrettyHandlerOptions{
+		SlogOptions: &slog.HandlerOptions{Level: slog.LevelDebug},
+	}
+
+	handler := opts.NewPrettyHandler(os.Stdout)
+	return slog.New(handler)
+}

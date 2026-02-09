@@ -1,0 +1,6 @@
+env: local
+storage_path: ./storage/sso
+token_ttl: 10m
+grpc:
+  port: 44055
+  timeout: 10h
