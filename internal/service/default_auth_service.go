@@ -122,7 +122,7 @@ func (a *DefaultAuthService) Login(
 	if err != nil || !isValidPassword {
 		return "", InvalidCredentialsErr
 	}
-	details := domain.NewUserDetails(findUserRes.ID, findUserRes.Email, "")
+	details := domain.NewUserDetails(findUserRes.ID, findUserRes.Email, findUserRes.Role)
 	genTokenRes, err := a.tokenGenerator.GenerateToken(ctx, details, strconv.Itoa(appID))
 	if err != nil {
 		return "", fmt.Errorf("error generating token: %w", err)

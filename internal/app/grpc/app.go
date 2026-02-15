@@ -31,14 +31,22 @@ func New(
 	tokenTTL time.Duration,
 ) *App {
 
+	requiredRoles := map[string][]string{
+		"/auth.Auth/IsAdmin": {middleware.RoleAdmin},
+	}
+
 	database := db.NewDatabase()
 	storer := storage.NewStorage(database.GetDB(), log)
 	passwordEncoder := encoder.NewPasswordEncoder()
 	tokenSigner := signer.NewHMACSigner(tokenSecret)
 	tokenGenerator := generator.NewDefaultTokenGenerator(tokenSigner, issuer, tokenTTL)
 	authService := service.NewDefaultAuthService(log, storer, storer, passwordEncoder, tokenGenerator)
-	gRPCServer := grpc.NewServer(grpc.UnaryInterceptor(
-		middleware.AuthInterceptor(tokenSigner)))
+	gRPCServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			middleware.AuthInterceptor(tokenSigner),
+			middleware.RolesInterceptor(requiredRoles),
+		),
+	)
 	authgrpc.Register(gRPCServer, authService)
 
 	return &App{

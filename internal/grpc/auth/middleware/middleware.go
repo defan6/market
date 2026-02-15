@@ -12,6 +12,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var RoleAdmin = "admin"
+
 type Signer interface {
 	Verify(ctx context.Context, token string, claims jwt.Claims) error
 }
@@ -42,15 +44,54 @@ func AuthInterceptor(signer Signer) grpc.UnaryServerInterceptor {
 		}
 
 		token := strings.TrimPrefix(values[0], "Bearer ")
-		var claims claims.AccessClaims
-		if err := signer.Verify(ctx, token, &claims); err != nil {
+		var clm claims.AccessClaims
+		if err := signer.Verify(ctx, token, &clm); err != nil {
 			return nil, status.Error(codes.Unauthenticated, "invalid token")
 		}
 
-		ctx = context.WithValue(ctx, "role", claims.Role)
-		ctx = context.WithValue(ctx, "email", claims.Email)
-		ctx = context.WithValue(ctx, "user_id", claims.UserID)
+		ctx = context.WithValue(ctx, "role", clm.Role)
+		ctx = context.WithValue(ctx, "email", clm.Email)
+		ctx = context.WithValue(ctx, "user_id", clm.UserID)
 
 		return handler(ctx, req)
 	}
+}
+
+func RolesInterceptor(requiredRoles map[string][]string) grpc.UnaryServerInterceptor {
+	return func(
+		ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (any, error) {
+		roles, ok := requiredRoles[info.FullMethod]
+
+		if !ok {
+			return handler(ctx, req)
+		}
+
+		userRole, ok := GetRoleFromContext(ctx)
+		if !ok {
+			return nil, status.Error(codes.Internal, "user role not fund in context")
+		}
+
+		hasPermission := false
+		for _, role := range roles {
+			if role == userRole {
+				hasPermission = true
+				break
+			}
+		}
+
+		if !hasPermission {
+			return nil, status.Error(codes.PermissionDenied, "permission denied: insufficient role")
+		}
+
+		return handler(ctx, req)
+	}
+}
+
+func GetRoleFromContext(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value("role").(string)
+	return role, ok
 }
