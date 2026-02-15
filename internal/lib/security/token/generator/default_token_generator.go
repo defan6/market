@@ -29,7 +29,11 @@ type Signer interface {
 	Verify(ctx context.Context, token string, claims jwt.Claims) error
 }
 
-func NewDefaultTokenGenerator(signer Signer, issuer string, ttl time.Duration) service.TokenGenerator {
+func NewDefaultTokenGenerator(
+	signer Signer,
+	issuer string,
+	ttl time.Duration,
+) service.TokenGenerator {
 	return &DefaultTokenGenerator{
 		signer: signer,
 		issuer: issuer,
@@ -37,7 +41,11 @@ func NewDefaultTokenGenerator(signer Signer, issuer string, ttl time.Duration) s
 	}
 }
 
-func (d *DefaultTokenGenerator) GenerateToken(ctx context.Context, userDetails domain.UserDetails, appID string) (*dto.TokenGenerateResponse, error) {
+func (d *DefaultTokenGenerator) GenerateToken(
+	ctx context.Context,
+	userDetails domain.UserDetails,
+	appID string,
+) (*dto.TokenGenerateResponse, error) {
 	claims := claims.AccessClaims{
 		UserID: userDetails.ID,
 		Email:  userDetails.Email,

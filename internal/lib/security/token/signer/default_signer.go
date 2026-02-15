@@ -10,11 +10,18 @@ type HMACSigner struct {
 	secret []byte
 }
 
-func (h *HMACSigner) Sign(ctx context.Context, claims jwt.Claims) (string, error) {
+func (h *HMACSigner) Sign(
+	ctx context.Context,
+	claims jwt.Claims,
+) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(h.secret)
 }
 
-func (h *HMACSigner) Verify(ctx context.Context, token string, claims jwt.Claims) error {
+func (h *HMACSigner) Verify(
+	ctx context.Context,
+	token string,
+	claims jwt.Claims,
+) error {
 	return nil
 }
 

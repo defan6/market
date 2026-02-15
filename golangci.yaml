@@ -1,0 +1,36 @@
+issues:
+  exclude-dirs:
+    - tests
+    - test
+    - e2e
+    - integration
+    - load
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - (*database/sql.Tx).Rollback
+  staticcheck:
+    checks: ["all"]
+  lll:
+    line-length: 120
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - gofmt
+    - goimports
+    - gocyclo
+    - gosec
+    - misspell
+    - prealloc
+    - lll

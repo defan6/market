@@ -51,7 +51,11 @@ type UserFinder interface {
 }
 
 type TokenGenerator interface {
-	GenerateToken(ctx context.Context, userDetails domain.UserDetails, appID string) (*dto.TokenGenerateResponse, error)
+	GenerateToken(
+		ctx context.Context,
+		userDetails domain.UserDetails,
+		appID string,
+	) (*dto.TokenGenerateResponse, error)
 }
 
 type PasswordEncoder interface {
@@ -59,7 +63,11 @@ type PasswordEncoder interface {
 	ComparePassword(password, hash string) (bool, error)
 }
 
-func (a *DefaultAuthService) Register(ctx context.Context, email string, password string) (userID int64, err error) {
+func (a *DefaultAuthService) Register(
+	ctx context.Context,
+	email string,
+	password string,
+) (userID int64, err error) {
 	exists, err := a.userFinder.ExistsByEmail(ctx, email)
 	if err != nil {
 		return 0, fmt.Errorf("Error checking if user exists: %w", err)
@@ -85,7 +93,10 @@ func (a *DefaultAuthService) Register(ctx context.Context, email string, passwor
 	return savedUser.ID, nil
 }
 
-func (a *DefaultAuthService) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+func (a *DefaultAuthService) IsAdmin(
+	ctx context.Context,
+	userID int64,
+) (bool, error) {
 	res, err := a.userFinder.FindUserByID(ctx, userID)
 	if err != nil {
 		return false, fmt.Errorf("Error checking if user exists: %w", err)
@@ -93,7 +104,8 @@ func (a *DefaultAuthService) IsAdmin(ctx context.Context, userID int64) (bool, e
 	return res.Role == domain.RoleAdmin, nil
 }
 
-func (a *DefaultAuthService) Login(ctx context.Context,
+func (a *DefaultAuthService) Login(
+	ctx context.Context,
 	email string,
 	password string,
 	appID int,

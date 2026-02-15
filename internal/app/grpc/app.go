@@ -10,7 +10,7 @@ import (
 	"sso/internal/lib/security/token/signer"
 	"sso/internal/service"
 	"sso/internal/storage"
-	"sso/storage"
+	db "sso/storage"
 	"time"
 
 	"google.golang.org/grpc"

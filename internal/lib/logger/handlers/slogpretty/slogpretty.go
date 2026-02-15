@@ -14,7 +14,8 @@ type PrettyHandlerOptions struct {
 	SlogOptions *slog.HandlerOptions
 }
 type PrettyHandler struct {
-	opts PrettyHandlerOptions
+
+	//opts PrettyHandlerOptions
 	slog.Handler
 	l     *stdLog.Logger
 	attrs []slog.Attr
