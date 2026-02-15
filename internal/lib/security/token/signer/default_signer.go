@@ -2,6 +2,7 @@ package signer
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -19,9 +20,20 @@ func (h *HMACSigner) Sign(
 
 func (h *HMACSigner) Verify(
 	ctx context.Context,
-	token string,
+	tokenString string,
 	claims jwt.Claims,
 ) error {
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method %v", token.Header["alg"])
+		}
+
+		return h.secret, nil
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

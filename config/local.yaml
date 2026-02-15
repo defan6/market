@@ -1,6 +1,6 @@
 env: local
 grpc:
-  port: 44055
+  port: 44056
   timeout: 10h
 token:
   ttl: 10m

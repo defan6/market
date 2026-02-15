@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	authgrpc "sso/internal/grpc/auth"
+	"sso/internal/grpc/auth/middleware"
 	"sso/internal/lib/security/encoder"
 	"sso/internal/lib/security/token/generator"
 	"sso/internal/lib/security/token/signer"
@@ -36,7 +37,8 @@ func New(
 	tokenSigner := signer.NewHMACSigner(tokenSecret)
 	tokenGenerator := generator.NewDefaultTokenGenerator(tokenSigner, issuer, tokenTTL)
 	authService := service.NewDefaultAuthService(log, storer, storer, passwordEncoder, tokenGenerator)
-	gRPCServer := grpc.NewServer()
+	gRPCServer := grpc.NewServer(grpc.UnaryInterceptor(
+		middleware.AuthInterceptor(tokenSigner)))
 	authgrpc.Register(gRPCServer, authService)
 
 	return &App{
