@@ -15,6 +15,7 @@ import (
 var (
 	InvalidCredentialsErr = errors.New("invalid credentials")
 	UserAlreadyExistsErr  = errors.New("user already exists")
+	ErrUserNotFound       = errors.New("user not found")
 )
 
 type DefaultAuthService struct {
