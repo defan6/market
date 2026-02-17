@@ -1,8 +1,0 @@
-env: local
-grpc:
-  port: 44056
-  timeout: 10h
-token:
-  ttl: 10m
-  secret: "super-secret"
-  issuer: "sso-auth-server"
