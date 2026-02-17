@@ -65,67 +65,68 @@ type PasswordEncoder interface {
 
 func (a *defaultAuthService) Register(
 	ctx context.Context,
-	email string,
-	password string,
-) (userID int64, err error) {
-	exists, err := a.userFinder.ExistsByEmail(ctx, email)
+	registerRequest *dto.RegisterUserRequest,
+) (*dto.RegisterUserResponse, error) {
+	exists, err := a.userFinder.ExistsByEmail(ctx, registerRequest.Email)
 	if err != nil {
-		return 0, fmt.Errorf("Error checking if user exists: %w", err)
+		return &dto.RegisterUserResponse{}, fmt.Errorf("Error checking if user exists: %w", err)
 	}
 	if exists {
-		return 0, ErrEmailAlreadyExists
+		return &dto.RegisterUserResponse{}, ErrEmailAlreadyExists
 	}
 
-	passwordHash, err := a.passwordEncoder.EncodePassword(password)
+	passwordHash, err := a.passwordEncoder.EncodePassword(registerRequest.Password)
 	if err != nil {
-		return 0, fmt.Errorf("Error encoding password: %w", err)
+		return &dto.RegisterUserResponse{}, fmt.Errorf("Error encoding password: %w", err)
 	}
 	user := domain.User{
-		Email:        email,
+		Email:        registerRequest.Email,
 		PasswordHash: string(passwordHash),
 		Role:         domain.RoleUser,
 	}
 
 	savedUser, err := a.userSaver.SaveUser(ctx, user)
 	if err != nil {
-		return 0, fmt.Errorf("Error saving user: %w", err)
+		return &dto.RegisterUserResponse{}, fmt.Errorf("Error saving user: %w", err)
 	}
-	return savedUser.ID, nil
+	registerResponse := dto.NewRegisterUserResponse(savedUser.ID)
+	return registerResponse, nil
 }
 
 func (a *defaultAuthService) IsAdmin(
 	ctx context.Context,
-	userID int64,
-) (bool, error) {
-	res, err := a.userFinder.FindUserByID(ctx, userID)
+	isAdminRequest *dto.IsAdminRequest,
+) (*dto.IsAdminResponse, error) {
+	res, err := a.userFinder.FindUserByID(ctx, isAdminRequest.ID)
 	if err != nil {
-		return false, fmt.Errorf("Error checking if user exists: %w", err)
+		return &dto.IsAdminResponse{}, fmt.Errorf("Error checking if user exists: %w", err)
 	}
-	return res.Role == domain.RoleAdmin, nil
+	isAdmin := res.Role == domain.RoleAdmin
+	isAdminResponse := dto.NewIsAdminResponse(isAdmin)
+	return isAdminResponse, nil
 }
 
 func (a *defaultAuthService) Login(
 	ctx context.Context,
-	email string,
-	password string,
-	appID int,
-) (token string, err error) {
-	findUserRes, err := a.userFinder.FindUserByEmail(ctx, email)
+	loginRequest *dto.LoginUserRequest,
+) (*dto.LoginUserResponse, error) {
+	findUserRes, err := a.userFinder.FindUserByEmail(ctx, loginRequest.Email)
 	if err != nil && errors.Is(err, storage.ErrUserNotFound) {
-		return "", ErrInvalidCredentials
+		return &dto.LoginUserResponse{}, ErrInvalidCredentials
 	}
 	if err != nil {
-		return "", fmt.Errorf("error finding user by email: %w", err)
+		return &dto.LoginUserResponse{}, fmt.Errorf("error finding user by email: %w", err)
 	}
 
-	isValidPassword, err := a.passwordEncoder.ComparePassword(password, findUserRes.PasswordHash)
+	isValidPassword, err := a.passwordEncoder.ComparePassword(loginRequest.Password, findUserRes.PasswordHash)
 	if err != nil || !isValidPassword {
-		return "", ErrInvalidCredentials
+		return &dto.LoginUserResponse{}, ErrInvalidCredentials
 	}
 	details := domain.NewUserDetails(findUserRes.ID, findUserRes.Email, findUserRes.Role)
-	genTokenRes, err := a.tokenGenerator.GenerateToken(ctx, details, strconv.Itoa(appID))
+	genTokenRes, err := a.tokenGenerator.GenerateToken(ctx, details, strconv.Itoa(loginRequest.AppID))
+	loginResponse := dto.NewLoginUserResponse(genTokenRes.Token)
 	if err != nil {
-		return "", fmt.Errorf("error generating token: %w", err)
+		return &dto.LoginUserResponse{}, fmt.Errorf("error generating token: %w", err)
 	}
-	return genTokenRes.Token, nil
+	return loginResponse, nil
 }

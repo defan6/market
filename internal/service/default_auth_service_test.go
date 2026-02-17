@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sso/internal/domain"
+	"sso/internal/dto"
 	"sso/internal/lib/logger/handlers/slogdiscard"
 	"sso/internal/service/mocks"
 	"testing"
@@ -56,6 +57,7 @@ func TestRegister_Success(t *testing.T) {
 	email := "test@mail.com"
 	password := "password"
 	hashed := []byte("hashed_password")
+	registerRequest := dto.NewRegisterUserRequest(email, password)
 
 	s.mockFinder.
 		On("ExistsByEmail", s.ctx, email).
@@ -74,10 +76,10 @@ func TestRegister_Success(t *testing.T) {
 			Role:         domain.RoleUser,
 		}, nil)
 
-	userID, err := s.service.Register(s.ctx, email, password)
+	registerResponse, err := s.service.Register(s.ctx, registerRequest)
 
 	require.NoError(t, err)
-	assert.Equal(t, int64(1), userID)
+	assert.Equal(t, int64(1), registerResponse.ID)
 
 	s.mockFinder.AssertExpectations(t)
 	s.mockEncoder.AssertExpectations(t)
@@ -89,12 +91,13 @@ func TestRegister_Failed_EmailAlreadyExists(t *testing.T) {
 
 	email := "test@mail.com"
 	password := "password"
+	registerRequest := dto.NewRegisterUserRequest(email, password)
 
 	s.mockFinder.
 		On("ExistsByEmail", s.ctx, email).
 		Return(true, nil)
 
-	savedUser, err := s.service.Register(s.ctx, email, password)
+	savedUser, err := s.service.Register(s.ctx, registerRequest)
 	require.Error(t, err)
 	require.ErrorIs(t, err, ErrEmailAlreadyExists)
 	assert.ErrorContains(t, err, "email already exists")
@@ -110,6 +113,7 @@ func TestRegister_Failed_DbErrorOnSave(t *testing.T) {
 	email := "test@mail.com"
 	password := "password"
 	hashed := []byte(password)
+	registerRequest := dto.NewRegisterUserRequest(email, password)
 
 	userToSave := domain.User{
 		Email:        email,
@@ -129,7 +133,7 @@ func TestRegister_Failed_DbErrorOnSave(t *testing.T) {
 		On("SaveUser", s.ctx, userToSave).
 		Return(domain.User{}, dbErr)
 
-	savedUser, err := s.service.Register(s.ctx, email, password)
+	savedUser, err := s.service.Register(s.ctx, registerRequest)
 	require.Error(t, err)
 	require.ErrorIs(t, err, dbErr)
 	assert.Empty(t, savedUser)

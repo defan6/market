@@ -11,9 +11,9 @@ import (
 )
 
 type AuthService interface {
-	Login(ctx context.Context, email string, password string, appID int) (token string, err error)
-	Register(ctx context.Context, email string, password string) (userID int64, err error)
-	IsAdmin(ctx context.Context, userID int64) (bool, error)
+	Login(ctx context.Context, loginRequest *dto.LoginUserRequest) (loginResponse *dto.LoginUserResponse, err error)
+	Register(ctx context.Context, registerRequest *dto.RegisterUserRequest) (registerResponse *dto.RegisterUserResponse, err error)
+	IsAdmin(ctx context.Context, isAdminRequest *dto.IsAdminRequest) (isAdminResponse *dto.IsAdminResponse, err error)
 }
 
 type UserService interface {
@@ -65,13 +65,14 @@ func (s *serverAPI) Login(
 	if err := validateLogin(req); err != nil {
 		return nil, err
 	}
-	token, err := s.authService.Login(ctx, req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
+	loginReq := dto.NewLoginUserRequest(req.GetEmail(), req.GetPassword(), int(req.GetAppId()))
+	loginResponse, err := s.authService.Login(ctx, loginReq)
 	if err != nil {
 		// TODO ...
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
 	return &ssov1.LoginResponse{
-		Token: token,
+		Token: loginResponse.Token,
 	}, nil
 }
 
@@ -82,12 +83,13 @@ func (s *serverAPI) Register(
 	if err := validateRegister(req); err != nil {
 		return nil, err
 	}
-	userID, err := s.authService.Register(ctx, req.GetEmail(), req.GetPassword())
+	registerRequest := dto.NewRegisterUserRequest(req.GetEmail(), req.GetPassword())
+	registerResponse, err := s.authService.Register(ctx, registerRequest)
 	if err != nil {
 		// TODO ...
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
-	return &ssov1.RegisterResponse{UserId: userID}, nil
+	return &ssov1.RegisterResponse{UserId: registerResponse.ID}, nil
 }
 
 func (s *serverAPI) IsAdmin(
@@ -97,12 +99,13 @@ func (s *serverAPI) IsAdmin(
 	if err := validateIsAdmin(req); err != nil {
 		return nil, err
 	}
-	isAdmin, err := s.authService.IsAdmin(ctx, req.GetUserId())
+	isAdminRequest := dto.NewIsAdminRequest(req.UserId)
+	isAdminResponse, err := s.authService.IsAdmin(ctx, isAdminRequest)
 	if err != nil {
 		// TODO ...
 		return nil, status.Error(codes.Internal, "internal server error")
 	}
-	return &ssov1.IsAdminResponse{IsAdmin: isAdmin}, nil
+	return &ssov1.IsAdminResponse{IsAdmin: isAdminResponse.IsAdmin}, nil
 }
 
 func validateLogin(req *ssov1.LoginRequest) error {
